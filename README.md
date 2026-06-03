@@ -52,6 +52,12 @@ Per-class F1-score:
 
 The model performs best on visually clearer expressions such as Happy and Surprise. Fear and Sad are more difficult because FER2013-style images are low-resolution and some facial expressions overlap visually.
 
+## Benchmark Context
+
+FER2013 is a challenging low-resolution facial expression dataset. The original Kaggle challenge winner is commonly cited at around 71.16% accuracy. Later research has reported higher results, including 73.28% with a tuned single-network model and around 75%+ with more advanced or ensemble-based approaches.
+
+This project achieves 67.39% test accuracy with a custom CNN, while also providing an end-to-end workflow for training, evaluation, single-image prediction, and real-time webcam inference.
+
 ## Project Structure
 
 ```text
