@@ -52,9 +52,9 @@ python train_model.py --architecture mobilenet --image-size 96
 
 The training script uses:
 
-- a FER2013-friendly CNN by default
+- a stronger FER2013-friendly CNN by default
 - data augmentation
-- clipped class weights for imbalanced emotions
+- square-root class weights for imbalanced emotions
 - early stopping
 - learning-rate reduction
 - best-model checkpointing

@@ -16,12 +16,19 @@ def load_emotion_model(model_path):
             raise
 
         from config import IMAGE_SIZE
-        from train_model import build_fer_cnn
+        from train_model import build_fer_cnn, build_fer_cnn_v1
 
         labels = load_labels()
-        model = build_fer_cnn(num_classes=len(labels), image_size=IMAGE_SIZE)
-        model.load_weights(model_path)
-        return model
+        errors = []
+        for builder in (build_fer_cnn, build_fer_cnn_v1):
+            model = builder(num_classes=len(labels), image_size=IMAGE_SIZE)
+            try:
+                model.load_weights(model_path)
+                return model
+            except ValueError as load_error:
+                errors.append(str(load_error))
+
+        raise ValueError("Could not load model weights with known local architectures.") from exc
 
 
 def load_labels(labels_path=LABELS_PATH):

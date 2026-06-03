@@ -13,7 +13,7 @@ from tensorflow.keras.preprocessing.image import ImageDataGenerator
 from config import BATCH_SIZE, CLASS_INDICES_PATH, EPOCHS, IMAGE_SIZE, LABELS_PATH, MODEL_DIR, MODEL_PATH, TEST_DIR, TRAIN_DIR
 
 
-def build_fer_cnn(num_classes, image_size):
+def build_fer_cnn_v1(num_classes, image_size):
     weight_decay = 1e-4
     model = tf.keras.Sequential(
         [
@@ -55,6 +55,56 @@ def build_fer_cnn(num_classes, image_size):
     return model
 
 
+def build_fer_cnn(num_classes, image_size):
+    weight_decay = 7e-5
+    model = tf.keras.Sequential(
+        [
+            tf.keras.Input(shape=(image_size, image_size, 1)),
+
+            Conv2D(64, (3, 3), padding="same", activation="relu", kernel_initializer="he_normal", kernel_regularizer=l2(weight_decay)),
+            BatchNormalization(),
+            Conv2D(64, (3, 3), padding="same", activation="relu", kernel_initializer="he_normal", kernel_regularizer=l2(weight_decay)),
+            BatchNormalization(),
+            MaxPooling2D((2, 2)),
+            Dropout(0.20),
+
+            Conv2D(128, (3, 3), padding="same", activation="relu", kernel_initializer="he_normal", kernel_regularizer=l2(weight_decay)),
+            BatchNormalization(),
+            Conv2D(128, (3, 3), padding="same", activation="relu", kernel_initializer="he_normal", kernel_regularizer=l2(weight_decay)),
+            BatchNormalization(),
+            MaxPooling2D((2, 2)),
+            Dropout(0.25),
+
+            Conv2D(256, (3, 3), padding="same", activation="relu", kernel_initializer="he_normal", kernel_regularizer=l2(weight_decay)),
+            BatchNormalization(),
+            Conv2D(256, (3, 3), padding="same", activation="relu", kernel_initializer="he_normal", kernel_regularizer=l2(weight_decay)),
+            BatchNormalization(),
+            MaxPooling2D((2, 2)),
+            Dropout(0.30),
+
+            Conv2D(512, (3, 3), padding="same", activation="relu", kernel_initializer="he_normal", kernel_regularizer=l2(weight_decay)),
+            BatchNormalization(),
+            Conv2D(512, (3, 3), padding="same", activation="relu", kernel_initializer="he_normal", kernel_regularizer=l2(weight_decay)),
+            BatchNormalization(),
+            MaxPooling2D((2, 2)),
+            Dropout(0.35),
+
+            Flatten(),
+            Dense(512, activation="relu", kernel_initializer="he_normal", kernel_regularizer=l2(weight_decay)),
+            BatchNormalization(),
+            Dropout(0.45),
+            Dense(num_classes, activation="softmax"),
+        ]
+    )
+
+    model.compile(
+        optimizer=tf.keras.optimizers.Adam(learning_rate=2e-4),
+        loss=tf.keras.losses.CategoricalCrossentropy(label_smoothing=0.03),
+        metrics=["accuracy"],
+    )
+    return model
+
+
 def build_mobilenet(num_classes, image_size, weights):
     base_model = tf.keras.applications.MobileNetV2(
         input_shape=(image_size, image_size, 3),
@@ -79,10 +129,17 @@ def build_mobilenet(num_classes, image_size, weights):
     return model
 
 
-def balanced_class_weights(classes, max_weight):
+def balanced_class_weights(classes, max_weight, mode):
+    if mode == "none":
+        return None
+
     counts = np.bincount(classes)
     total = np.sum(counts)
     weights = total / (len(counts) * np.maximum(counts, 1))
+
+    if mode == "sqrt":
+        weights = np.sqrt(weights)
+
     weights = np.minimum(weights, max_weight)
     return dict(enumerate(weights.astype("float32")))
 
@@ -93,8 +150,9 @@ def parse_args():
     parser.add_argument("--batch-size", type=int, default=BATCH_SIZE)
     parser.add_argument("--image-size", type=int, default=IMAGE_SIZE)
     parser.add_argument("--model-path", default=str(MODEL_PATH))
-    parser.add_argument("--architecture", choices=["fer_cnn", "mobilenet"], default="fer_cnn")
-    parser.add_argument("--max-class-weight", type=float, default=3.0)
+    parser.add_argument("--architecture", choices=["fer_cnn", "fer_cnn_v1", "mobilenet"], default="fer_cnn")
+    parser.add_argument("--class-weight-mode", choices=["balanced", "sqrt", "none"], default="sqrt")
+    parser.add_argument("--max-class-weight", type=float, default=2.5)
     parser.add_argument("--weights", choices=["imagenet", "none"], default="imagenet")
     return parser.parse_args()
 
@@ -154,12 +212,14 @@ def main():
     with open(CLASS_INDICES_PATH, "w", encoding="utf-8") as f:
         json.dump(train_data.class_indices, f, indent=2)
 
-    class_weight_map = balanced_class_weights(train_data.classes, args.max_class_weight)
+    class_weight_map = balanced_class_weights(train_data.classes, args.max_class_weight, args.class_weight_mode)
     print(f"Using class weights: {class_weight_map}")
 
     if args.architecture == "mobilenet":
         weights = None if args.weights == "none" else args.weights
         model = build_mobilenet(num_classes=train_data.num_classes, image_size=args.image_size, weights=weights)
+    elif args.architecture == "fer_cnn_v1":
+        model = build_fer_cnn_v1(num_classes=train_data.num_classes, image_size=args.image_size)
     else:
         model = build_fer_cnn(num_classes=train_data.num_classes, image_size=args.image_size)
     model.summary()
