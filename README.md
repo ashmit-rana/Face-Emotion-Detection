@@ -92,12 +92,36 @@ Useful options:
 python realtime_detection.py --smooth-frames 15 --confidence-threshold 0.40
 ```
 
-## Why Happy Was Easier
+## Dataset
 
-The dataset has many more happy images than some other classes. For example, disgust has far fewer images, so the model gets less practice on that class. The updated training script adds class weights and augmentation to reduce that bias.
+This project uses a FER2013-style dataset with seven emotion classes: Angry, Disgust, Fear, Happy, Neutral, Sad, and Surprise.
 
-## GitHub Notes
+The dataset is not included in this repository because image datasets can be large and may have licensing or privacy restrictions. To train the model, place the data in this structure:
 
-The dataset is ignored by default because image datasets are usually large and may have licensing/privacy restrictions. Include dataset source instructions in this README before publishing.
+```text
+dataset/
+  train/angry/
+  train/disgust/
+  train/fear/
+  train/happy/
+  train/neutral/
+  train/sad/
+  train/surprise/
+  test/angry/
+  test/disgust/
+  test/fear/
+  test/happy/
+  test/neutral/
+  test/sad/
+  test/surprise/
+```
 
-If the model grows larger than GitHub's normal file limit, publish it through GitHub Releases or Git LFS.
+## Results and Limitations
+
+The model performs strongest on clearer expressions such as Happy, Surprise, and Neutral. Some classes, especially Fear and Sad, are harder to separate because facial expressions can be subtle and visually similar in low-resolution FER2013-style images.
+
+Class imbalance also affects performance. For example, Happy has many more training examples than Disgust, so the training pipeline uses augmentation and clipped class weights to reduce bias toward majority classes.
+
+## Model File
+
+The trained model is included for demo use. If future model files become larger than GitHub's standard file size limit, they should be shared through GitHub Releases or Git LFS.
