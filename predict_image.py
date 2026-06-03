@@ -45,15 +45,18 @@ def main():
 
     if args.save_annotated:
         best = int(order[0])
-        cv2.rectangle(image, (x, y), (x + w, y + h), (0, 180, 255), 2)
+        scale = max(w, h) / 200
+        font_scale = max(0.75, scale)
+        thickness = max(2, int(scale * 2))
+        cv2.rectangle(image, (x, y), (x + w, y + h), (0, 180, 255), thickness)
         cv2.putText(
             image,
             f"{labels[best]} {prediction[best]:.0%}",
             (x, max(y - 10, 20)),
             cv2.FONT_HERSHEY_SIMPLEX,
-            0.75,
+            font_scale,
             (0, 180, 255),
-            2,
+            thickness,
         )
         cv2.imwrite(args.save_annotated, image)
         print(f"Saved annotated image to {args.save_annotated}")
