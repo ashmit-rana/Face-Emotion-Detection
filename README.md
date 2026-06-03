@@ -1,127 +1,177 @@
 # Face Emotion Detection
 
-Real-time facial emotion detection using TensorFlow and OpenCV. The project trains a seven-class emotion classifier and runs webcam inference with face cropping, preprocessing, confidence display, and frame-level prediction smoothing.
+Real-time facial emotion recognition built with TensorFlow and OpenCV. The system detects a face from a webcam feed, preprocesses the face region, predicts one of seven emotions, and displays the result live with confidence smoothing.
 
-## Emotions
+![Python](https://img.shields.io/badge/Python-3.9+-3776AB?style=for-the-badge&logo=python&logoColor=white)
+![TensorFlow](https://img.shields.io/badge/TensorFlow-CNN-FF6F00?style=for-the-badge&logo=tensorflow&logoColor=white)
+![OpenCV](https://img.shields.io/badge/OpenCV-Real--Time-5C3EE8?style=for-the-badge&logo=opencv&logoColor=white)
+![Dataset](https://img.shields.io/badge/Dataset-FER2013--style-2E7D32?style=for-the-badge)
 
-- Angry
-- Disgust
-- Fear
-- Happy
-- Neutral
-- Sad
-- Surprise
+## Demo
+
+| Angry | Happy | Surprise |
+|---|---|---|
+| ![Angry prediction](docs/angry.jpg) | ![Happy prediction](docs/happy.jpg) | ![Surprise prediction](docs/surprise.jpg) |
+
+| Sad | Neutral | Disgust |
+|---|---|---|
+| ![Sad prediction](docs/sad.jpg) | ![Neutral prediction](docs/neutral.jpg) | ![Disgust prediction](docs/disgust.jpg) |
+
+## Highlights
+
+- Real-time webcam emotion detection using OpenCV.
+- Seven emotion classes: Angry, Disgust, Fear, Happy, Neutral, Sad, and Surprise.
+- FER2013-friendly grayscale CNN trained on 48x48 facial expression images.
+- Data augmentation and class weighting to reduce dataset imbalance.
+- Evaluation pipeline with precision, recall, F1-score, and confusion matrix.
+- Compatibility loader for Colab-trained Keras models used locally in VS Code.
+
+## Results
+
+Evaluation on the test split:
+
+| Metric | Score |
+|---|---:|
+| Accuracy | 67.39% |
+| Macro F1-score | 66.00% |
+| Weighted F1-score | 67.15% |
+
+Per-class F1-score:
+
+| Emotion | F1-score |
+|---|---:|
+| Happy | 87.08% |
+| Surprise | 78.31% |
+| Disgust | 68.49% |
+| Neutral | 63.67% |
+| Angry | 61.51% |
+| Sad | 53.83% |
+| Fear | 49.13% |
+
+![Confusion matrix](docs/confusion_matrix.png)
+
+The model performs best on visually clearer expressions such as Happy and Surprise. Fear and Sad are more difficult because FER2013-style images are low-resolution and some facial expressions overlap visually.
 
 ## Project Structure
 
 ```text
 face_emotion_detection/
-  dataset/
-    train/<emotion>/
-    test/<emotion>/
+  config.py                  # Shared paths and training constants
+  emotion_utils.py           # Model loading and face preprocessing helpers
+  train_model.py             # CNN training pipeline
+  evaluate_model.py          # Classification report and confusion matrix
+  predict_image.py           # Single-image prediction
+  realtime_detection.py      # Webcam-based live emotion detection
+  train_colab.ipynb          # Colab training workflow
+  haarcascade_frontalface_default.xml
   model/
     emotion_model.h5
     emotion_labels.json
-  train_model.py
-  evaluate_model.py
-  predict_image.py
-  realtime_detection.py
-  emotion_utils.py
-  config.py
+    class_indices.json
+  docs/
+    angry.jpg
+    happy.jpg
+    surprise.jpg
+    sad.jpg
+    neutral.jpg
+    disgust.jpg
+    confusion_matrix.png
 ```
 
 ## Setup
 
+Clone the repository and install the dependencies:
+
 ```bash
+git clone https://github.com/ashmit-rana/Face-Emotion-Detection.git
+cd Face-Emotion-Detection
+
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-## Train
+## Run Real-Time Detection
 
 ```bash
-python train_model.py
+python3 realtime_detection.py
 ```
 
-The default model is a grayscale CNN tuned for FER2013-style 48x48 emotion images. If you want to try transfer learning instead, use:
-
-```bash
-python train_model.py --architecture mobilenet --image-size 96
-```
-
-The training script uses:
-
-- a stronger FER2013-friendly CNN by default
-- data augmentation
-- square-root class weights for imbalanced emotions
-- early stopping
-- learning-rate reduction
-- best-model checkpointing
-
-## Evaluate
-
-```bash
-python evaluate_model.py
-```
-
-This writes:
-
-- `reports/classification_report.txt`
-- `reports/confusion_matrix.png`
-
-Use the confusion matrix to see which emotions are being mixed up. This is especially useful for visually similar classes such as fear, sad, neutral, and angry.
-
-## Predict One Image
-
-```bash
-python predict_image.py path/to/image.jpg --save-annotated output.jpg
-```
-
-## Real-Time Webcam Detection
-
-```bash
-python realtime_detection.py
-```
-
-Press `q` to quit.
+Press `q` to close the webcam window.
 
 Useful options:
 
 ```bash
-python realtime_detection.py --smooth-frames 15 --confidence-threshold 0.40
+python3 realtime_detection.py --smooth-frames 15 --confidence-threshold 0.40
 ```
+
+## Predict a Single Image
+
+```bash
+python3 predict_image.py path/to/image.jpg --save-annotated output.jpg
+```
+
+## Evaluate the Model
+
+```bash
+python3 evaluate_model.py
+```
+
+This creates:
+
+```text
+reports/classification_report.txt
+reports/confusion_matrix.png
+```
+
+## Train the Model
+
+The default training pipeline uses a CNN designed for FER2013-style grayscale images:
+
+```bash
+python3 train_model.py --epochs 80 --batch-size 64
+```
+
+The training script includes:
+
+- image augmentation
+- square-root class weighting
+- label smoothing
+- dropout and L2 regularization
+- early stopping
+- learning-rate reduction
+- best-model checkpointing
+
+For longer training runs, Google Colab with a T4 GPU is recommended. The included `train_colab.ipynb` notebook can be used for that workflow.
 
 ## Dataset
 
-This project uses a FER2013-style dataset with seven emotion classes: Angry, Disgust, Fear, Happy, Neutral, Sad, and Surprise.
+This project uses a FER2013-style dataset organized into seven emotion folders. The dataset is not included in this repository because image datasets can be large and may have licensing or privacy restrictions.
 
-The dataset is not included in this repository because image datasets can be large and may have licensing or privacy restrictions. To train the model, place the data in this structure:
+Expected structure:
 
 ```text
 dataset/
-  train/angry/
-  train/disgust/
-  train/fear/
-  train/happy/
-  train/neutral/
-  train/sad/
-  train/surprise/
-  test/angry/
-  test/disgust/
-  test/fear/
-  test/happy/
-  test/neutral/
-  test/sad/
-  test/surprise/
+  train/
+    angry/
+    disgust/
+    fear/
+    happy/
+    neutral/
+    sad/
+    surprise/
+  test/
+    angry/
+    disgust/
+    fear/
+    happy/
+    neutral/
+    sad/
+    surprise/
 ```
 
-## Results and Limitations
+## Notes
 
-The model performs strongest on clearer expressions such as Happy, Surprise, and Neutral. Some classes, especially Fear and Sad, are harder to separate because facial expressions can be subtle and visually similar in low-resolution FER2013-style images.
+The included model is trained for demonstration and learning purposes. Facial emotion recognition is sensitive to lighting, face crop quality, dataset bias, and expression ambiguity, so real-world predictions may vary.
 
-Class imbalance also affects performance. For example, Happy has many more training examples than Disgust, so the training pipeline uses augmentation and clipped class weights to reduce bias toward majority classes.
-
-## Model File
-
-The trained model is included for demo use. If future model files become larger than GitHub's standard file size limit, they should be shared through GitHub Releases or Git LFS.
+Future improvements could include a stronger face detector, face alignment, FERPlus or RAF-DB training data, and more advanced architectures.
